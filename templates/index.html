@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Enzyme Kinetics Calculator{% endblock %}
+
+{% block content %}
+  <h1>Enzyme kinetics calculator</h1>
+  <br>
+
+  <form action="" method="post" enctype="multipart/form-data">
+
+      {{ form.hidden_tag() }}
+
+      <table cellpadding = "5">
+        <tr>
+          <td>{{ form.total_rxn_vol.label }}</td> <td>{{ form.total_rxn_vol }}</td>
+        </tr>
+          <td>{{ form.enz_rxn_vol.label }}</td> <td>{{ form.enz_rxn_vol }}</td>
+        </tr>
+          <td>{{ form.enz_mol_wt.label }}</td> <td>{{ form.enz_mol_wt }}</td>
+        </tr>
+          <td>{{ form.stock_conc.label }}</td> <td>{{ form.stock_conc }}</td>
+        </tr>
+          <td>{{ form.extinct.label }}</td> <td>{{ form.extinct }}</td>
+        </tr>
+          <td>{{ form.prot_dilution.label }}</td> <td>{{ form.prot_dilution }}</td>
+        </tr>
+          <td>{{ form.title.label }}</td> <td>{{ form.title }}</td>
+        </tr>
+          <td>{{ form.assay_data.label }}</td> <td>{{ form.assay_data }}</td>
+      </table>
+
+      <br>
+      {{ form.submit }}
+
+  </form>
+
+<br>
+<br>
+{% if result != None %}
+<img src="{{ url_for('static', filename='plot.png') }}" width=600 /img>
+{% endif %}
+
+{% endblock %}
+
