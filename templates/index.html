@@ -40,5 +40,9 @@
 <img src="{{ url_for('static', filename='plot.png') }}" width=600 /img>
 {% endif %}
 
+{% if link != None %}
+<a href={{ url_for('download')  }}>Download output</a>
+{% endif %}
+
 {% endblock %}
 

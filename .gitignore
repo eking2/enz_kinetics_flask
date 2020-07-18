@@ -7,7 +7,6 @@
 # Icon must end with two \r
 Icon
 
-
 # Thumbnails
 ._*
 
@@ -30,3 +29,6 @@ Temporary Items
 # ignore notebook checkpoints
 .ipynb_checkpoints
 **/*.ipynb_checkpoints/
+*.zip
+static
+__pycache__

@@ -1,9 +1,11 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, abort, send_from_directory
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, IntegerField, DecimalField, StringField, TextAreaField
 from wtforms.validators import DataRequired
 from pathlib import Path
 from kinetics import *
+import yaml
+from zipfile import ZipFile
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'asdfk1j4kfjasf1kradf'
@@ -54,9 +56,42 @@ def home():
         calc = kinetics_calc(assay_df, **enz_dict)
         calc.plot_mm(title)
 
-        return render_template('index.html', result=True, form=form)
+        # save inputs and kinetic params to yaml
+        output = calc.save_output()
+        output['reaction_volume_ul'] = rxn_vol
+        output['enzyme_volumne_ul'] = enz_vol
+        output['mol_wt'] = float(mol_wt)
+        output['dilution_Factor'] = dil
+        output['extinction_coefficient'] = float(ext)
+        output['title'] = title
 
-    return render_template('index.html', result = None, form=form)
+        with open('static/inputs.yaml', 'w') as fo:
+            yaml.dump(output, fo)
+
+        # save raw assay input as csv
+        df = pd.read_csv(StringIO(assay), delim_whitespace=True)
+        df.to_csv('static/raw_assay_data.csv', index=False)
+
+        # zip all output and put link to download
+        # plot, input yaml, raw assay input, processed assay df
+        to_zip = Path('static').iterdir()
+
+        with ZipFile('outputs.zip', 'w') as zip:
+            for fi in to_zip:
+                # do not nest folder in static
+                zip.write(fi, fi.name)
+        
+        return render_template('index.html', result=True, form=form, link=True)
+
+    return render_template('index.html', result = None, form=form, link=None)
+
+@app.route('/download')
+def download():
+
+    try:
+        return send_from_directory(directory = '.', filename='outputs.zip', as_attachment=True)
+    except FileNotFoundError:
+        abort(404)
 
 
 if __name__ == '__main__':

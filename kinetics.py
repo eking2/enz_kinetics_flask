@@ -35,9 +35,9 @@ def make_assay_df(string):
 
 
 def make_enz_dict(rxn_vol, enz_vol, enz_conc, mol_wt, dil, ext):
-    
+
     '''convert units for michaelis menten calc'''
-    
+
     # mass of enzyme in reaction
     # mg/ml (same as g/L) * 1/df * ul/ul = g/L
     enz_rxn_conc_g_l = enz_conc * 1/dil * enz_vol/rxn_vol
@@ -79,6 +79,12 @@ class kinetics_calc:
         self.pathlen = pathlen
         self.enz_rxn_mM = enz_rxn_mM
 
+        self.r_sq = None
+        self.kcat = None
+        self.km = None
+        self.kcat_err = None
+        self.km_err = None
+
         self.abs_to_vel()
 
 
@@ -96,7 +102,7 @@ class kinetics_calc:
         '''fit data to michaelis menten'''
 
         # fix the enzyme conc with lambda
-        popt, pcov = curve_fit(lambda sub, kcat, km: velocity(sub, self.enz_rxn_mM, kcat, km), 
+        popt, pcov = curve_fit(lambda sub, kcat, km: velocity(sub, self.enz_rxn_mM, kcat, km),
                 self.assay_df['cofa_conc_mM'], self.assay_df['v0_mM_s'])
 
         perr = np.sqrt(np.diag(pcov))
@@ -108,7 +114,7 @@ class kinetics_calc:
     def get_rsq(self, popt):
 
         '''get rsq for data to fit curve'''
-        
+
         residuals = self.assay_df['v0_mM_s'] - velocity(self.assay_df['cofa_conc_mM'], self.enz_rxn_mM, popt[0], popt[1])
         ss_res = np.sum(residuals**2)
         ss_tot = np.sum((self.assay_df['v0_mM_s'] - np.mean(self.assay_df['v0_mM_s']))**2)
@@ -123,10 +129,10 @@ class kinetics_calc:
 
         # get kinetics
         popt, perr = self.fit_mm()
-        r_sq = self.get_rsq(popt)
+        self.r_sq = self.get_rsq(popt)
 
-        kcat, km = popt[0], popt[1]
-        kcat_err, km_err = perr[0], perr[1]
+        self.kcat, self.km = popt[0], popt[1]
+        self.kcat_err, self.km_err = perr[0], perr[1]
 
         # range from lowest cofa conc to highest
         min_cofa = self.assay_df['cofa_conc_mM'].min()
@@ -134,21 +140,21 @@ class kinetics_calc:
         x = np.linspace(min_cofa, max_cofa, 1000)
 
         # best fit curve
-        plt.plot(x, velocity(x, self.enz_rxn_mM, kcat, km) / self.enz_rxn_mM, color='C0', lw=2, label='Michaelis Menten')
+        plt.plot(x, velocity(x, self.enz_rxn_mM, self.kcat, self.km) / self.enz_rxn_mM, color='C0', lw=2, label='Michaelis Menten')
 
         # km line
-        plt.axvline(km, color='orange', ls='--', lw=1.5, alpha=0.6, label='$K_m$')
+        plt.axvline(self.km, color='orange', ls='--', lw=1.5, alpha=0.6, label='$K_m$')
 
-        # scatter experimental data 
+        # scatter experimental data
         plt.scatter(self.assay_df['cofa_conc_mM'], self.assay_df['v0_mM_s'] / self.enz_rxn_mM, color='limegreen', edgecolor='k',
                     zorder=10, s=30, alpha=0.8)
 
         # annotate
-        annotation = r'$k_{{cat}}$ = {:.3f} $\pm$ {:.2f} s$^{{-1}}$'.format(kcat, kcat_err)
+        annotation = r'$k_{{cat}}$ = {:.3f} $\pm$ {:.2f} s$^{{-1}}$'.format(self.kcat, self.kcat_err)
         annotation += '\n'
-        annotation += r'$K_m$ = {:.3f} $\pm$ {:.2f} mM'.format(km, km_err)
+        annotation += r'$K_m$ = {:.3f} $\pm$ {:.2f} mM'.format(self.km, self.km_err)
         annotation += '\n'
-        annotation += r'$R^2$ = {:.3f}'.format(r_sq)
+        annotation += r'$R^2$ = {:.3f}'.format(self.r_sq)
 
         plt.text(0.47, 0.13, annotation, transform=plt.gca().transAxes, size=14, linespacing=1.6)
 
@@ -162,7 +168,26 @@ class kinetics_calc:
         plt.gca().set_axisbelow(True)
         plt.savefig('./static/plot.png', bbox_inches='tight', dpi=600)
 
+        plt.close()
 
+
+    def save_output(self):
+
+        '''output dict with solved kinetic parameters, save dataframe'''
+
+        output = {}
+
+        # convert to regulat float so yaml is human readable
+        # otherwise prints extra
+        output['kcat'] = float(self.kcat)
+        output['kcat_err'] = float(self.kcat_err)
+        output['km'] = float(self.km)
+        output['km_err'] = float(self.km_err)
+        output['r_sq'] = float(self.r_sq)
+
+        self.assay_df.to_csv('static/assay_df.csv', index=False)
+
+        return output
 
 
 
