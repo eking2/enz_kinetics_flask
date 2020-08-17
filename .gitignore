@@ -31,4 +31,5 @@ Temporary Items
 **/*.ipynb_checkpoints/
 *.zip
 static/*
+!static/.gitkeep
 __pycache__
