@@ -52,14 +52,15 @@ def home():
         # convert data
         assay_df = make_assay_df(assay)
         enz_dict = make_enz_dict(rxn_vol, enz_vol, conc, mol_wt, dil, ext)
-        
+
         calc = kinetics_calc(assay_df, **enz_dict)
         calc.plot_mm(title)
 
         # save inputs and kinetic params to yaml
         output = calc.save_output()
+        output['conc'] = conc
         output['reaction_volume_ul'] = rxn_vol
-        output['enzyme_volumne_ul'] = enz_vol
+        output['enzyme_volume_ul'] = enz_vol
         output['mol_wt'] = float(mol_wt)
         output['dilution_Factor'] = dil
         output['extinction_coefficient'] = float(ext)
@@ -80,7 +81,7 @@ def home():
             for fi in to_zip:
                 # do not nest folder in static
                 zip.write(fi, fi.name)
-        
+
         return render_template('index.html', result=True, form=form, link=True)
 
     return render_template('index.html', result = None, form=form, link=None)
