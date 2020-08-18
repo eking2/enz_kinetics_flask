@@ -19,7 +19,7 @@ class EnzymeAssay(FlaskForm):
     enz_rxn_vol = IntegerField('Enzyme volume in reaction (uL)', validators = [DataRequired()])
     stock_conc = DecimalField('Enzyme stock concentration (mg/mL)', validators = [DataRequired()])
     enz_mol_wt = DecimalField('Enzyme molecular weight (g/mol)', validators = [DataRequired()])
-    prot_dilution = IntegerField('Dilution factor', validators = [DataRequired()])
+    prot_dilution = DecimalField('Dilution factor', validators = [DataRequired()])
     extinct = DecimalField('Extinction coefficient (mM<sup>-1</sup> cm<sup>-1</sup>)', default = 6.22, validators = [DataRequired()])
     title = StringField('Run title')
     assay_data = TextAreaField('Assay data', render_kw={'rows' : 14, 'cols' : 70}, validators = [DataRequired()])
@@ -58,16 +58,17 @@ def home():
 
         # save inputs and kinetic params to yaml
         output = calc.save_output()
-        output['conc'] = conc
+        output['conc'] = float(conc)
         output['reaction_volume_ul'] = rxn_vol
         output['enzyme_volume_ul'] = enz_vol
         output['mol_wt'] = float(mol_wt)
-        output['dilution_Factor'] = dil
+        output['dilution_factor'] = float(dil)
         output['extinction_coefficient'] = float(ext)
         output['title'] = title
 
         with open('static/inputs.yaml', 'w') as fo:
-            yaml.dump(output, fo)
+            # flow style prints each key on separate line
+            yaml.dump(output, fo, default_flow_style=False)
 
         # save raw assay input as csv
         df = pd.read_csv(StringIO(assay), delim_whitespace=True)
