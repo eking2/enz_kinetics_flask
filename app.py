@@ -1,6 +1,6 @@
 from flask import Flask, render_template, abort, send_from_directory
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, DecimalField, StringField, TextAreaField
+from wtforms import SubmitField, IntegerField, DecimalField, StringField, TextAreaField, RadioField
 from wtforms.validators import DataRequired
 from pathlib import Path
 from kinetics import *
@@ -21,6 +21,7 @@ class EnzymeAssay(FlaskForm):
     enz_mol_wt = DecimalField('Enzyme molecular weight (g/mol)', validators = [DataRequired()])
     prot_dilution = DecimalField('Dilution factor', validators = [DataRequired()])
     extinct = DecimalField('Extinction coefficient (mM<sup>-1</sup> cm<sup>-1</sup>)', default = 6.22, validators = [DataRequired()])
+    fit = RadioField('Fit type', choices=[('hyper', 'Hyperbolic'), ('lin', 'Linear (K<sub>M</sub> >> [S])')], default='hyper', validators=[DataRequired()])
     title = StringField('Run title')
     assay_data = TextAreaField('Assay data', render_kw={'rows' : 14, 'cols' : 70}, validators = [DataRequired()])
 
