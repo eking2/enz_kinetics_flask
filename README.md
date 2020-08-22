@@ -11,6 +11,25 @@ V_0 &= \frac{V_\mathrm{max} \cdot [\mathrm{S}]} {K_\mathrm{M} + [\mathrm{S}]} \\
 \end{align*}
 ">
 
+When <img src=
+"https://render.githubusercontent.com/render/math?math=%5Ctextstyle+%5Cbegin%7Balign%2A%7D%0AK_%7B%5Cmathrm%7BM%7D%7D+%5Cgg+%5B%5Cmathrm%7BS%7D%5D%0A%5Cend%7Balign%2A%7D%0A" 
+alt="\begin{align*}
+K_{\mathrm{M}} \gg [\mathrm{S}]
+\end{align*}
+">, we utilize the linear form of the the Michaelis-Menten equation and solve for <img src=
+"https://render.githubusercontent.com/render/math?math=%5Ctextstyle+%5Cbegin%7Balign%2A%7D%0Ak_%7B%5Cmathrm%7Bcat%7D%7D%2FK_%7B%5Cmathrm%7BM%7D%7D+%0A%5Cend%7Balign%2A%7D%0A" 
+alt="\begin{align*}
+k_{\mathrm{cat}}/K_{\mathrm{M}} 
+\end{align*}
+"> (catalytic efficiency) instead of <img src="https://render.githubusercontent.com/render/math?math=k_\mathrm{cat}">  and <img src="https://render.githubusercontent.com/render/math?math=K_\mathrm{M}"> separately.
+
+<img src=
+"https://render.githubusercontent.com/render/math?math=%5CLarge+%5Cdisplaystyle+%5Cbegin%7Balign%2A%7D%0AV_0+%3D+%5Cfrac%7B%5B%5Cmathrm%7BE%7D%5D+%5C%3B+k_%7B%5Cmathrm%7Bcat%7D%7D%7D+%7BK_%7B%5Cmathrm%7BM%7D%7D%7D+%5Ccdot+%5B%5Cmathrm%7BS%7D%5D%0A%5Cend%7Balign%2A%7D%0A" 
+alt="\begin{align*}
+V_0 = \frac{[\mathrm{E}] \; k_{\mathrm{cat}}} {K_{\mathrm{M}}} \cdot [\mathrm{S}]
+\end{align*}
+">
+
 ## Installation
 ```
 git clone https://github.com/eking2/enz_kinetics_flask.git
