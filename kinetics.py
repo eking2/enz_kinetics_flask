@@ -79,7 +79,7 @@ def lin_velocity(sub, enz, cat_eff):
 
 class kinetics_calc:
 
-    def __init__(self, assay_df, ext, pathlen, enz_rxn_mM, fit):
+    def __init__(self, assay_df, fit, ext, pathlen, enz_rxn_mM):
 
         self.assay_df = assay_df
         self.ext = ext
@@ -113,7 +113,7 @@ class kinetics_calc:
 
         '''fit data to michaelis menten'''
 
-        # coefficients and errors 
+        # coefficients and errors
         # (kcat, km) for hyperbolic
         # kcat/km for linear
 
@@ -128,8 +128,9 @@ class kinetics_calc:
             self.kcat_err, self.km_err = perr[0], perr[1]
 
             # propagate error
+            covar = pcov[0][-1]
             self.cat_eff = self.kcat / self.km
-            self.cat_eff_err = np.absolute(self.cat_eff) * ()
+            self.cat_eff_err = np.absolute(self.cat_eff) * ( (self.kcat_err/self.kcat)**2 + (self.km_err/self.km)**2 + 2*covar/(self.kcat * self.km))
 
         else:
             popt, pcov = curve_fit(lambda sub, cat_eff: lin_velocity(sub, self.enz_rxn_mM, cat_eff),
@@ -137,15 +138,19 @@ class kinetics_calc:
 
             perr = np.sqrt(np.diag(pcov))
 
-    def get_rsq(self, popt):
+            self.cat_eff = popt[0]
+            self.cat_eff_err = perr[0]
+
+
+    def get_rsq(self):
 
         '''get rsq for data to fit curve'''
 
         if self.fit == 'hyperbolic':
-            residuals = self.assay_df['v0_mM_s'] - velocity(self.assay_df['cofa_conc_mM'], self.enz_rxn_mM, popt[0], popt[1])
+            residuals = self.assay_df['v0_mM_s'] - velocity(self.assay_df['cofa_conc_mM'], self.enz_rxn_mM, self.kcat, self.km)
 
         else:
-            residuals = self.assay_df['v0_mM_s'] - lin_velocity(self.assay_df['cofa_conc_mM'], self.enz_rxn_mM, popt[0])
+            residuals = self.assay_df['v0_mM_s'] - lin_velocity(self.assay_df['cofa_conc_mM'], self.enz_rxn_mM, self.cat_eff)
 
         ss_res = np.sum(residuals**2)
         ss_tot = np.sum((self.assay_df['v0_mM_s'] - np.mean(self.assay_df['v0_mM_s']))**2)
@@ -164,6 +169,7 @@ class kinetics_calc:
         if self.fit == 'hyperbolic':
 
             # best fit curve
+            # plot rate on y instead of velocity, divide by enz conc
             plt.plot(x, velocity(x, self.enz_rxn_mM, self.kcat, self.km) / self.enz_rxn_mM, color='C0', lw=2, label='Michaelis Menten')
 
             # km line
@@ -172,12 +178,27 @@ class kinetics_calc:
             # annotate
             annotation = r'$k_{{cat}}$ = {:.3f} $\pm$ {:.2f} s$^{{-1}}$'.format(self.kcat, self.kcat_err)
             annotation += '\n'
-            annotation += r'$K_m$ = {:.3f} $\pm$ {:.2f} mM'.format(self.km, self.km_err)
+            annotation += r'$K_M$ = {:.3f} $\pm$ {:.2f} mM'.format(self.km, self.km_err)
             annotation += '\n'
-            annotation + r'k_{{cat}} / K_m = {:.3f} $\pm$ {:.2f} mM$^{{-1}}$ s$^{{-1}}$'.format(self.cat_eff, self.cat_eff_err)
+
+            # text too long to fit on plot
+            #annotation += r'$k_{{cat}}$ / $K_m$ = {:.3f} $\pm$ {:.2f} s$^{{-1}}$ mM$^{{-1}}$'.format(self.cat_eff, self.cat_eff_err)
+            #annotation += '\n'
             annotation += r'$R^2$ = {:.3f}'.format(self.r_sq)
 
             plt.text(0.47, 0.13, annotation, transform=plt.gca().transAxes, size=14, linespacing=1.6)
+
+        else:
+
+            # plot linear fit
+            plt.plot(x, lin_velocity(x, self.enz_rxn_mM, self.cat_eff) / self.enz_rxn_mM, color='C0', lw=2, label='Linear Michaelis Menten')
+
+            annotation = r'$k_{{cat}} / K_M$ = {:.2f} $\pm$ {:.1f} s$^{{-1}}$ mM$^{{-1}}$'.format(self.cat_eff, self.cat_eff_err)
+            annotation += '\n'
+            annotation += r'$R^2$ = {:.3f}'.format(self.r_sq)
+
+            plt.text(0.37, 0.13, annotation, transform=plt.gca().transAxes, size=12, linespacing=1.6)
+
 
         # scatter experimental data
         plt.scatter(self.assay_df['cofa_conc_mM'], self.assay_df['v0_mM_s'] / self.enz_rxn_mM, color='limegreen', edgecolor='k',
@@ -202,18 +223,18 @@ class kinetics_calc:
 
         output = {}
 
-        # convert to regulat float so yaml is human readable
+        # convert to regular float so yaml is human readable
         # otherwise prints extra
-        output['kcat'] = float(self.kcat)
-        output['kcat_err'] = float(self.kcat_err)
-        output['km'] = float(self.km)
-        output['km_err'] = float(self.km_err)
+        output['kcat'] = float(self.kcat) if self.kcat else None
+        output['kcat_err'] = float(self.kcat_err) if self.kcat_err else None
+        output['km'] = float(self.km) if self.km  else None
+        output['km_err'] = float(self.km_err) if self.km_err else None
         output['cat_eff'] = float(self.cat_eff)
         output['cat_eff_err'] = float(self.cat_eff_err)
         output['r_sq'] = float(self.r_sq)
         output['fit'] = self.fit
 
-        self.assay_df.to_csv('static/assay_df.csv', index=False)
+        self.assay_df[['trial', 'cofa_conc_mM', 'slope_a_s', 'v0_mM_s']].to_csv('static/assay_df.csv', index=False)
 
         return output
 
